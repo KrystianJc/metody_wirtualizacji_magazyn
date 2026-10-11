@@ -1,30 +1,29 @@
 import { Component, inject, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { Product } from '../interfaces/product';
+import { JsonPipe } from '@angular/common';
 
 @Component({
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, JsonPipe],
   selector: 'app-root',
   styleUrl: './app.css',
   templateUrl: './app.html',
 })
 export class App {
   protected readonly title = signal('frontend');
-  private http = inject(HttpClient); 
+  private http = inject(HttpClient);
 
-  backendData: any; 
-
-  apiUrl = '/api/check'; 
+  backendData = signal<Product[] | null>(null);
 
   ngOnInit() {
-    this.http.get(this.apiUrl).subscribe({
+    this.http.get<Product[]>('/api/products').subscribe({
       next: (data) => {
-        this.backendData = data;
-        console.log('Dane pobrane pomyślnie przez Proxy!', data);
+        this.backendData.set(data);
       },
       error: (err) => {
-        console.error('Coś poszło nie tak z proxy:', err);
-      }
+        console.error('Something unexpected happened:', err);
+      },
     });
   }
 }
