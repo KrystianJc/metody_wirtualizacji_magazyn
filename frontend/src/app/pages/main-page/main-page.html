@@ -1,0 +1,33 @@
+<section class="container py-4 vh-100" id="main" >
+    <h1 class="h3" >Produkty w magazynie</h1>
+    <select
+      class="form-select mb-3"
+      aria-label="Filtruj po kategorii"
+      [value]="selectedCategoryMain()"
+      (change)="onMainCategoryChange($event)">
+      <option value="">Wszystkie kategorie</option>
+      @for (category of categories(); track category) {
+        <option [value]="category">{{ category }}</option>
+      }
+    </select>
+      <div class="row mb-4 g-2 overflow-auto align-content-start" style="height: 75%;">
+        @for (item of filteredMainProducts(); track item.id) {
+          <div class="col-sm-4 d-flex">
+            <div class="card flex-fill">
+              <div class="card-body">
+                <h5 class="card-title">{{ item.name }}</h5>
+                <p class="card-text"><b>Ilość:</b> {{ item.amount }}</p>
+                <p class="card-text"><b>Kategoria:</b> {{ item.category }}</p>
+                <p class="card-text"><b>Lokalizacja:</b></p>
+                <ul class="list-unstyled ms-3 mb-0">
+                  <li>Sekcja: {{ item.section }}</li>
+                  <li>Regał: {{ item.rack }}</li>
+                  <li>Półka: {{ item.shelf }}</li>
+                  <li>Miejsce: {{ item.placement }}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+  </section>
