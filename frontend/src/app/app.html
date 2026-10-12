@@ -1,3 +1,163 @@
-@for (item of backendData(); track item.id; let idx = $index, e = $even) {
-  {{ item | json }}
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <span class="navbar-brand ms-4 me-4 fs-6">System magazynowy</span>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse" id="navbarNav">
+    <ul class="navbar-nav">
+      <li class="nav-item">
+        <button class="nav-link" [class.active]="activePage() === 'main'" type="button" (click)="openPage('main')">Strona główna</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" [class.active]="activePage() === 'add'" type="button" (click)="openPage('add')">Dodaj</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" [class.active]="activePage() === 'redeem'" type="button" (click)="openPage('redeem')">Pobierz</button>
+      </li>
+    </ul>
+  </div>
+</nav>
+
+@if (activePage() === 'main') {
+  <section class="container py-4" id="main" >
+    <h1 class="h3" >Produkty w magazynie</h1>
+    <select
+      class="form-select mb-3"
+      aria-label="Filtruj po kategorii"
+      [value]="selectedCategoryMain()"
+      (change)="onMainCategoryChange($event)">
+      <option value="">Wszystkie kategorie</option>
+      @for (category of categories(); track category) {
+        <option [value]="category">{{ category }}</option>
+      }
+    </select>
+      <div class="row mb-4 g-2">
+        @for (item of filteredMainProducts(); track item.id) {
+          <div class="col-sm-4">
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title">{{ item.name }}</h5>
+                <p class="card-text"><b>Ilość:</b> {{ item.amount }}</p>
+                <p class="card-text"><b>Kategoria:</b> {{ item.category }}</p>
+                <p class="card-text"><b>Lokalizacja:</b></p>
+                <ul class="list-unstyled ms-3 mb-0">
+                  <li>Sekcja: {{ item.section }}</li>
+                  <li>Regał: {{ item.rack }}</li>
+                  <li>Półka: {{ item.shelf }}</li>
+                  <li>Miejsce: {{ item.placement }}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+  </section>
+} @else if (activePage() === 'add') {
+  <section class="container py-4" id="add">
+    <div class="row">
+      <div class="col-md-6">
+        <h1 class="h4">Dodaj produkt</h1>
+        <form>
+          <input class="form-check-input me-2" type="checkbox" id="isInMagazine" [checked]="isInMagazine()" (change)="onIsInMagazineChange($event)">
+          <label class="form-check-label" for="isInMagazine">Czy produkt jest już w magazynie?</label><br>
+          @if (isInMagazine()) {
+                <label for="name_f0">Wybierz produkt z magazynu</label>
+                <select class="form-control" id="name_f0">
+                  @for (item of backendData(); track item.id) {
+                    <option>{{ item.name }}</option>
+                  }
+                </select>
+                <label for="amount_f0">Ilość</label>
+                <input class="form-control" id="amount_f0" type="number" min="1">
+                <fieldset disabled> <!-- Dodaj automatyczne wpisywanie danych wybranego produktu-->
+                  <label for="category_f0">Kategoria</label>
+                  <input class="form-control" id="category_f0" type="text">
+                  <label for="section_f0">Sekcja</label>
+                  <input class="form-control" id="section_f0" type="number">
+                  <label for="rack_f0">Regał</label>
+                  <input class="form-control" id="rack_f0" type="number">
+                  <label for="shelf_f0">Półka</label>
+                  <input class="form-control" id="shelf_f0" type="number">
+                  <label for="placement_f0">Miejsce</label>
+                  <input class="form-control" id="placement_f0" type="number">
+                </fieldset>
+
+          } @else {
+                <label for="name_f1">Nazwa nowego produktu</label>
+                <input class="form-control" id="name_f1" type="text">
+                <label for="amount_f1">Ilość</label>
+                <input class="form-control" id="amount_f1" type="number" >
+                <fieldset>
+                  <label for="category_f1">Kategoria</label>
+                  <input class="form-control" id="category_f1" type="text">
+                  <label for="section_f1">Sekcja</label>
+                  <input class="form-control" id="section_f1" type="number">
+                  <label for="rack_f1">Regał</label>
+                  <input class="form-control" id="rack_f1" type="number">
+                  <label for="shelf_f1">Półka</label>
+                  <input class="form-control" id="shelf_f1" type="number">
+                  <label for="placement_f1">Miejsce</label>
+                  <input class="form-control" id="placement_f1" type="number">
+                </fieldset>
+          }
+        </form>
+        <div class="mt-3">
+          <button class="btn btn-primary">Dodaj produkt</button>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <ul class="list-group overflow-auto" style="max-height: 50%;">
+          <!--Do dorobienia wyświetlanie produktów do zatwierdzenia z opcją zmniejszenia ilości -->
+          @for (item of backendData(); track item.id) {
+            <li class="list-group-item">Hog rider</li>
+          }
+        </ul>
+        <div class="mt-3">
+          <button class="btn btn-primary">Zatwierdź</button>
+        </div>
+      </div>
+    </div>
+  </section>
+} @else {
+  <section class="container py-4" id="redeem">
+    <div class="row">
+      <div class="col-md-8">
+        <h1 class="h4">Pobierz produkt</h1>
+        <select
+          class="form-select mb-3"
+          aria-label="Filtruj po kategorii"
+          [value]="selectedCategoryRedeem()"
+          (change)="onRedeemCategoryChange($event)">
+          <option value="">Wszystkie kategorie</option>
+          @for (category of categories(); track category) {
+            <option [value]="category">{{ category }}</option>
+          }
+        </select>
+      <div class="row mb-4 g-2">
+        @for (item of filteredRedeemProducts(); track item.id) {
+          <div class="col-sm-4">
+            <div class="card h-100">
+              <div class="card-body">
+                <h5 class="card-title h-50">{{ item.name }}</h5>
+                <p class="card-text"><b>Ilość:</b> {{ item.amount }}</p>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+        </div>
+          <div class="col-md-4">
+            <ul class="list-group overflow-auto" style="max-height: 50%;">
+              <!--Do dorobienia wyświetlanie produktów do zatwierdzenia z opcją zmniejszenia ilości -->
+              @for (item of backendData(); track item.id) {
+                <li class="list-group-item">Hog rider</li>
+              }
+            </ul>
+            <div class="mt-3">
+              <button class="btn btn-primary">Pobierz</button>
+            </div>
+          </div>
+    </div>
+  </section>
+
 }
