@@ -1,0 +1,17 @@
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on: #czekanie na backend
+      - backend
