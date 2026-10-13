@@ -1,5 +1,4 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { Product } from '../../../interfaces/product';
 import { ProductService } from '../../services/product.service';
 
 @Component({
