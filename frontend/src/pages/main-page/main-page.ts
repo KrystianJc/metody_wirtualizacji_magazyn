@@ -1,15 +1,17 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { ProductService } from '../../services/product.service';
+import { LoadingPage } from '../loading-page/loading-page';
 
 @Component({
-  imports: [],
+  imports: [LoadingPage],
   selector: 'app-main-page',
   styleUrl: './main-page.css',
   templateUrl: './main-page.html',
 })
 export class MainPage {
   private productService = inject(ProductService);
-  backendData = this.productService.products
+  backendData = this.productService.products;
+  loading = this.productService.loading;
 
   selectedCategoryMain = signal('');
 
@@ -26,7 +28,7 @@ export class MainPage {
 
   onMainCategoryChange(event: Event) {
     this.selectedCategoryMain.set((event.target as HTMLSelectElement).value);
-  };
+  }
 
   ngOnInit() {
     this.productService.loadProducts();

@@ -1,4 +1,7 @@
-<section class="container py-4" id="redeem">
+@if (loading()) {
+  <app-loading-page />
+} @else {
+  <section class="container py-4" id="redeem">
     <h1 class="h4 mb-3">Pobierz produkt</h1>
     <div class="row vh-100">
       <div class="col-md-8 h-100">
@@ -6,13 +9,14 @@
           class="form-select mb-3"
           aria-label="Filtruj po kategorii"
           [value]="selectedCategoryRedeem()"
-          (change)="onRedeemCategoryChange($event)">
+          (change)="onRedeemCategoryChange($event)"
+        >
           <option value="">Wszystkie kategorie</option>
           @for (category of categories(); track category) {
             <option [value]="category">{{ category }}</option>
           }
         </select>
-        <div class="row g-2 overflow-auto align-content-start" style="height: 40%;">
+        <div class="row g-2 overflow-auto align-content-start" style="height: 40%">
           @for (item of filteredRedeemProducts(); track item.id) {
             <div class="col-sm-4 d-flex">
               <div class="card flex-fill">
@@ -24,15 +28,16 @@
             </div>
           }
         </div>
-        </div>
-          <div class="col-md-4">
-            <ul class="list-group overflow-auto border border-dark" style="height: 30%;">
-              <!--Do dorobienia wyświetlanie produktów do zatwierdzenia z opcją zmniejszenia ilości -->
-                <li class="list-group-item">Hog rider</li>
-            </ul>
-            <div class="mt-3">
-              <button class="btn btn-primary">Pobierz</button>
-            </div>
-          </div>
       </div>
+      <div class="col-md-4">
+        <ul class="list-group overflow-auto border border-dark" style="height: 30%">
+          <!--Do dorobienia wyświetlanie produktów do zatwierdzenia z opcją zmniejszenia ilości -->
+          <li class="list-group-item">Hog rider</li>
+        </ul>
+        <div class="mt-3">
+          <button class="btn btn-primary">Pobierz</button>
+        </div>
+      </div>
+    </div>
   </section>
+}

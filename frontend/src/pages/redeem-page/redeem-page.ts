@@ -1,8 +1,9 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { ProductService } from '../../services/product.service';
+import { LoadingPage } from '../loading-page/loading-page';
 
 @Component({
-  imports: [],
+  imports: [LoadingPage],
   selector: 'app-redeem-page',
   styleUrl: './redeem-page.css',
   templateUrl: './redeem-page.html',
@@ -10,9 +11,10 @@ import { ProductService } from '../../services/product.service';
 export class RedeemPage {
   private productService = inject(ProductService);
   backendData = this.productService.products;
+  loading = this.productService.loading;
 
   selectedCategoryRedeem = signal('');
-  
+
   categories = computed(() => [
     ...new Set((this.backendData() ?? []).map((item) => item.category)),
   ]);
@@ -29,6 +31,6 @@ export class RedeemPage {
   }
 
   ngOnInit() {
-  this.productService.loadProducts();
-}
+    this.productService.loadProducts();
+  }
 }

@@ -10,7 +10,6 @@ export class ProductService {
   loading = signal(false);
 
   loadProducts() {
-
     this.loading.set(true);
 
     this.http.get<Product[]>('/api/products').subscribe({
@@ -19,7 +18,7 @@ export class ProductService {
         this.loading.set(false);
       },
       error: (error) => {
-        console.error('Nie udało się pobrać produktów:', error);
+        console.error("Couldn't fetch data:", error);
         this.loading.set(false);
       },
     });
