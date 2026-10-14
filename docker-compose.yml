@@ -6,6 +6,8 @@ services:
     environment:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
+    volumes: # volume z danymi dla początkowej inicjalizacji danych
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
 
   backend:
     build: ./backend
