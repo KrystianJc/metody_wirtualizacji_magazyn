@@ -1,7 +1,22 @@
 import express from "express";
+import pg from "pg";
+
+const pool = new pg.Pool({
+  // zmienna środowiskowe z compose
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+});
 
 const app = express();
 const PORT = 3000;
+
+// testowy endpoint dla bazy
+app.get("/api/db-check", async (req, res) => {
+  const result = await pool.query("SELECT NOW()");
+  res.json(result.rows[0]);
+});
 
 // endpoint testowy
 app.get("/api/check", (req, res) => {

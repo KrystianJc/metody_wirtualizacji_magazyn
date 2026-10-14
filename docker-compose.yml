@@ -1,13 +1,23 @@
+name: magazyn
+
 services:
   db:
     image: postgres:18-alpine
     environment:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
 
   backend:
     build: ./backend
     ports:
       - "3000:3000"
+    environment:
+      DB_HOST: db
+      DB_USER: postgres
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+    depends_on: #czekanie na bazę
+      - db
 
   frontend:
     build: ./frontend
