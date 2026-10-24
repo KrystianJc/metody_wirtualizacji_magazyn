@@ -6,8 +6,9 @@ services:
     environment:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
-    volumes: # volume z danymi dla początkowej inicjalizacji danych
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql # volume z danymi dla początkowej inicjalizacji danych
+      - db_data:/var/lib/postgresql # volume Dockera
 
   backend:
     build: ./backend
@@ -37,3 +38,5 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+volumes:
+  db_data:
