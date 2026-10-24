@@ -22,6 +22,22 @@ app.get("/api/products", async (req, res) => {
   res.json(result.rows);
 });
 
+app.get("/api/products/:id", async (req, res) => {
+  const id = Number(req.params.id);
+
+  if (!Number.isInteger(id) || id < 1) {
+    return res.status(400).json({ error: "Invalid product id" });
+  }
+
+  const result = await pool.query("SELECT * FROM products WHERE id = $1", [id]);
+
+  if (result.rows.length === 0) {
+    return res.status(404).json({ error: "Product not found" });
+  }
+
+  res.json(result.rows[0]);
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
