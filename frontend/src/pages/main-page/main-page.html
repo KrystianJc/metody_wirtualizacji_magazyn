@@ -18,18 +18,48 @@
       @for (item of filteredMainProducts(); track item.id) {
         <div class="col-sm-4 d-flex">
           <div class="card flex-fill">
-            <div class="card-body">
-              <h5 class="card-title">{{ item.name }}</h5>
-              <p class="card-text"><b>Ilość:</b> {{ item.amount }}</p>
-              <p class="card-text"><b>Kategoria:</b> {{ item.category }}</p>
-              <p class="card-text"><b>Lokalizacja:</b></p>
-              <ul class="list-unstyled ms-3 mb-0">
-                <li>Sekcja: {{ item.section }}</li>
-                <li>Regał: {{ item.rack }}</li>
-                <li>Półka: {{ item.shelf }}</li>
-                <li>Miejsce: {{ item.placement }}</li>
-              </ul>
+            <div class="card-body d-flex flex-column">
+            <h5 class="card-title">{{ item.name }}</h5>         
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <div class="text-muted small">Ilość</div>
+                <div>{{ item.amount }}</div>
+              </div>
+              <div class="col-6">
+                <div class="text-muted small">Kategoria</div>
+                <div>{{ item.category }}</div>
+              </div>
             </div>
+            <div class="mb-3">
+              <div class="text-muted small">Lokalizacja</div>
+              <div>
+                Sekcja {{ item.section }} · Regał {{ item.rack }}<br />
+                Półka {{ item.shelf }} · Miejsce {{ item.placement }}
+              </div>
+            </div>
+            <div class="mt-auto">
+              <label class="form-label" for="pickup-{{ item.id }}">
+                Ilość do pobrania
+              </label>
+              <input
+                #pickupAmount
+                [id]="'pickup-' + item.id"
+                class="form-control w-25 mb-2"
+                type="number"
+                min="1"
+                [max]="item.amount"
+                value="1"
+              />
+              <button
+                type="button"
+                class="btn btn-primary w-25"
+                [disabled]="item.amount < 1"
+                (click)="onPickup(item.id, pickupAmount.value, item.amount)"
+              >
+                Pobierz
+              </button>
+            </div>
+          </div>
           </div>
         </div>
       }

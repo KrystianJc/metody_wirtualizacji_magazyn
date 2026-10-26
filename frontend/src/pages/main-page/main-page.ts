@@ -30,6 +30,19 @@ export class MainPage {
     this.selectedCategoryMain.set((event.target as HTMLSelectElement).value);
   }
 
+  onPickup(id: number, amountValue: string, available: number) {
+    const amount = Number(amountValue);
+  
+    if (!Number.isInteger(amount) || amount !== available) {
+      return;
+    }
+  
+    this.productService.deleteProduct(id).subscribe({
+      next: () => this.productService.loadProducts(),
+      error: (error) => console.error('Nie udało się usunąć produktu:', error),
+    });
+  }
+
   ngOnInit() {
     this.productService.loadProducts();
   }
