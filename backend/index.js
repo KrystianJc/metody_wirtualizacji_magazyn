@@ -69,6 +69,33 @@ app.post("/api/products", async (req, res) => {
   res.status(201).json(result.rows[0]);
 });
 
+app.patch("/api/products/:id/stock", async (req, res) => {
+  const id = Number(req.params.id);
+  const { amount } = req.body ?? {};
+
+  if (!Number.isInteger(id) || id < 1) {
+    return res.status(400).json({ error: "Invalid product id" });
+  }
+
+  if (!Number.isInteger(amount) || amount < 1) {
+    return res.status(400).json({ error: "Amount must be a positive integer" });
+  }
+
+  const result = await pool.query(
+    `UPDATE products
+     SET amount = amount - $1
+     WHERE id = $2 AND amount >= $1
+     RETURNING *`,
+    [amount, id],
+  );
+
+  if (result.rowCount === 0) {
+    return res.status(409).json({ error: "Product not found or insufficient stock" });
+  }
+
+  res.json(result.rows[0]);
+});
+
 app.delete("/api/products/:id", async (req, res) => {
   const id = Number(req.params.id);
 

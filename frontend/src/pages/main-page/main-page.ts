@@ -33,11 +33,15 @@ export class MainPage {
   onPickup(id: number, amountValue: string, available: number) {
     const amount = Number(amountValue);
   
-    if (!Number.isInteger(amount) || amount !== available) {
+    if (!Number.isInteger(amount) || amount < 1 || amount > available) {
       return;
     }
-  
-    this.productService.deleteProduct(id).subscribe({
+
+    const request = amount === available
+      ? this.productService.deleteProduct(id)
+      : this.productService.pickup(id, amount);
+
+    request.subscribe({
       next: () => this.productService.loadProducts(),
       error: (error) => console.error('Nie udało się usunąć produktu:', error),
     });

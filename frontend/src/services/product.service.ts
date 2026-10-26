@@ -25,6 +25,10 @@ export class ProductService {
   }
 
   deleteProduct(id: number) {
-  return this.http.delete<void>(`/api/products/${id}`);
+    return this.http.delete<void>(`/api/products/${id}`);
+  }
+
+  pickup(id: number, amount: number) {
+    return this.http.patch<void>(`/api/products/${id}/stock`, { amount });
   }
 }
