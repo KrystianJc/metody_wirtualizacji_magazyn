@@ -3,6 +3,8 @@
 } @else {
   <section class="container py-4 vh-100" id="main">
     <h1 class="h3">Produkty w magazynie</h1>
+    <div class="row g-3 align-items-start">
+      <div class="col-lg-9">
     <select
       class="form-select mb-3"
       aria-label="Filtruj po kategorii"
@@ -14,9 +16,9 @@
         <option [value]="category">{{ category }}</option>
       }
     </select>
-    <div class="row mb-4 g-2 overflow-auto align-content-start" style="height: 75%">
+    <div class="row mb-4 g-2 overflow-auto align-content-start" style="max-height: 70vh">
       @for (item of filteredMainProducts(); track item.id) {
-        <div class="col-sm-4 d-flex">
+        <div class="col-md-6 col-xl-4 d-flex">
           <div class="card flex-fill">
             <div class="card-body d-flex flex-column">
             <h5 class="card-title">{{ item.name }}</h5>         
@@ -44,7 +46,7 @@
               <input
                 #pickupAmount
                 [id]="'pickup-' + item.id"
-                class="form-control w-25 mb-2"
+                class="form-control w-40 mb-2"
                 type="number"
                 min="1"
                 [max]="item.amount"
@@ -52,7 +54,7 @@
               />
               <button
                 type="button"
-                class="btn btn-primary w-25"
+                class="btn btn-primary action-button"
                 [disabled]="item.amount < 1"
                 (click)="onPickup(item.id, pickupAmount.value, item.amount)"
               >
@@ -63,6 +65,44 @@
           </div>
         </div>
       }
+    </div>
+      </div>
+      <aside class="col-lg-3">
+        <div class="card">
+          <div class="card-body">
+            <h2 class="h5 card-title">Wyszukaj po ID</h2>
+            <form (submit)="onSearch($event, productId.value)">
+              <label class="form-label" for="product-id-search">ID produktu</label>
+              <input
+                #productId
+                class="form-control mb-2"
+                id="product-id-search"
+                type="number"
+                min="1"
+                step="1"
+                required
+              />
+              <button class="btn btn-primary action-button" type="submit">
+                Szukaj
+              </button>
+            </form>
+            @if (searchError()) {
+              <p class="text-danger mt-2 mb-0" role="alert">{{ searchError() }}</p>
+            }
+            @if (searchedProduct(); as product) {
+              <div class="border rounded p-2 mt-3">
+                <h3 class="h6 mb-2">{{ product.name }}</h3>
+                <div class="small">ID: {{ product.id }}</div>
+                <div class="small">Kategoria: {{ product.category }}</div>
+                <div class="small">Ilość: {{ product.amount }}</div>
+                <div class="small">
+                  Lokalizacja: {{ product.section }}/{{ product.rack }}/{{ product.shelf }}/{{ product.placement }}
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </aside>
     </div>
   </section>
 }

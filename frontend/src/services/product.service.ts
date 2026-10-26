@@ -24,6 +24,10 @@ export class ProductService {
     });
   }
 
+  getProductById(id: number) {
+    return this.http.get<Product>(`/api/products/${id}`);
+  }
+
   deleteProduct(id: number) {
     return this.http.delete<void>(`/api/products/${id}`);
   }

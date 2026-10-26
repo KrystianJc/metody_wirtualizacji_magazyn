@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { ProductService } from '../../services/product.service';
+import { Product } from '../../interfaces/product';
 import { LoadingPage } from '../loading-page/loading-page';
 
 @Component({
@@ -14,6 +15,8 @@ export class MainPage {
   loading = this.productService.loading;
 
   selectedCategoryMain = signal('');
+  searchedProduct = signal<Product | null>(null);
+  searchError = signal('');
 
   categories = computed(() => [
     ...new Set((this.backendData() ?? []).map((item) => item.category)),
@@ -28,6 +31,32 @@ export class MainPage {
 
   onMainCategoryChange(event: Event) {
     this.selectedCategoryMain.set((event.target as HTMLSelectElement).value);
+  }
+
+  onSearch(event: Event, idValue: string) {
+    event.preventDefault();
+
+    const id = Number(idValue);
+    this.searchError.set('');
+    this.searchedProduct.set(null);
+
+    if (!Number.isInteger(id) || id < 1) {
+      this.searchError.set('Wpisz poprawne ID produktu.');
+      return;
+    }
+
+    this.productService.getProductById(id).subscribe({
+      next: (product) => {
+        this.searchedProduct.set(product);
+      },
+      error: (error) => {
+        this.searchError.set(
+          error.status === 404
+            ? 'Nie znaleziono produktu.'
+            : 'Nie udało się wyszukać produktu.',
+        );
+      },
+    });
   }
 
   onPickup(id: number, amountValue: string, available: number) {
