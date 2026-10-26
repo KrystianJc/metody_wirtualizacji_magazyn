@@ -31,4 +31,8 @@ export class ProductService {
   pickup(id: number, amount: number) {
     return this.http.patch<void>(`/api/products/${id}/stock`, { amount });
   }
+
+  createProduct(product: Omit<Product, 'id'>) {
+    return this.http.post<Product>('/api/products', product);
+  }
 }

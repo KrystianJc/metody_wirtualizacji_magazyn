@@ -1,37 +1,76 @@
 <section class="container py-4" id="add">
-    <h1 class="h4 mb-3">Dodaj produkt</h1>
-    <div class="row">
-      <div class="col-md-6">
-        <form>
-              <label for="name_f1">Nazwa nowego produktu</label>
-              <input class="form-control" id="name_f1" type="text">
-              <label for="amount_f1">Ilość</label>
-              <input class="form-control" id="amount_f1" type="number" >
-              <fieldset>
-                <label for="category_f1">Kategoria</label>
-                <input class="form-control" id="category_f1" type="text">
-                <label for="section_f1">Sekcja</label>
-                <input class="form-control" id="section_f1" type="number">
-                <label for="rack_f1">Regał</label>
-                <input class="form-control" id="rack_f1" type="number">
-                <label for="shelf_f1">Półka</label>
-                <input class="form-control" id="shelf_f1" type="number">
-                <label for="placement_f1">Miejsce</label>
-                <input class="form-control" id="placement_f1" type="number">
-              </fieldset>
-        </form>
-        <div class="mt-3">
-          <button class="btn btn-primary">Dodaj produkt</button>
+  <h1 class="h4 mb-3">Dodaj produkt</h1>
+
+  <div class="row">
+    <div class="col-md-8 col-lg-7">
+      <form #productForm (submit)="onSubmit($event, productForm)">
+        <div class="mb-3">
+          <label for="name_f1" class="form-label">Nazwa nowego produktu</label>
+          <input
+            class="form-control"
+            id="name_f1"
+            name="name"
+            type="text"
+            required
+          />
         </div>
-      </div>
-      <div class="col-md-4">
-        <ul class="list-group overflow-auto border border-dark" style="height: 50%;">
-          <!--Do dorobienia wyświetlanie produktów do zatwierdzenia z opcją zmniejszenia ilości -->
-            <li class="list-group-item">Hog rider</li>
-        </ul>
-        <div class="mt-3">
-          <button class="btn btn-primary">Zatwierdź</button>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label for="category_f1" class="form-label">Kategoria</label>
+            <select
+              class="form-select"
+              id="category_f1"
+              name="category"
+              required
+              [disabled]="loading() || categories().length === 0"
+            >
+              <option value="" selected disabled>Wybierz kategorię</option>
+              @for (category of categories(); track category) {
+                <option [value]="category">{{ category }}</option>
+              }
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label for="amount_f1" class="form-label">Ilość</label>
+            <input
+              class="form-control"
+              id="amount_f1"
+              name="amount"
+              type="number"
+              min="0"
+              step="1"
+              required
+            />
+          </div>
         </div>
-      </div>
+
+        <fieldset class="border rounded p-3 mb-3">
+          <legend class="float-none w-auto px-2 fs-6">Lokalizacja</legend>
+          <div class="row g-3">
+            <div class="col-6 col-md-3">
+              <label for="section_f1" class="form-label">Sekcja</label>
+              <input class="form-control" id="section_f1" name="section" type="number" min="0" step="1" required />
+            </div>
+            <div class="col-6 col-md-3">
+              <label for="rack_f1" class="form-label">Regał</label>
+              <input class="form-control" id="rack_f1" name="rack" type="number" min="0" step="1" required />
+            </div>
+            <div class="col-6 col-md-3">
+              <label for="shelf_f1" class="form-label">Półka</label>
+              <input class="form-control" id="shelf_f1" name="shelf" type="number" min="0" step="1" required />
+            </div>
+            <div class="col-6 col-md-3">
+              <label for="placement_f1" class="form-label">Miejsce</label>
+              <input class="form-control" id="placement_f1" name="placement" type="number" min="0" step="1" required />
+            </div>
+          </div>
+        </fieldset>
+
+        <button class="btn btn-primary" type="submit" [disabled]="loading()">
+          Dodaj produkt
+        </button>
+      </form>
     </div>
-  </section>
+  </div>
+</section>
