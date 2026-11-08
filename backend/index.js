@@ -69,7 +69,7 @@ app.post("/api/products", async (req, res) => {
   res.status(201).json(result.rows[0]);
 });
 
-app.patch("/api/products/:id/stock", async (req, res) => {
+aapp.patch("/api/products/:id/stock", async (req, res) => {
   const id = Number(req.params.id);
   const { amount } = req.body ?? {};
 
@@ -90,7 +90,13 @@ app.patch("/api/products/:id/stock", async (req, res) => {
   );
 
   if (result.rowCount === 0) {
-    return res.status(409).json({ error: "Product not found or insufficient stock" });
+    const existing = await pool.query("SELECT 1 FROM products WHERE id = $1", [id]);
+
+    if (existing.rowCount === 0) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    return res.status(409).json({ error: "Insufficient stock" });
   }
 
   res.json(result.rows[0]);
