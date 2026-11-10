@@ -20,3 +20,16 @@ INSERT INTO products (name, category, amount, section, rack, shelf, placement) V
   ('Rekawice robocze','BHP',45,1,2,1,6),
   ('Poziomica aluminiowa 60 cm','Narzędzia pomiarowe',12,3,2,3,8),
   ('Przedluzacz bebnowy 25 m','Osprzęt elektryczny',9,4,1,2,2);
+
+CREATE TABLE stock_movements (
+  id SERIAL PRIMARY KEY,
+  product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  amount INTEGER NOT NULL CHECK (amount > 0),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO stock_movements (product_id, amount) VALUES
+  (1, 3),
+  (1, 2),
+  (3, 50),
+  (8, 5);

@@ -23,16 +23,30 @@ Produkt jest reprezentowany przez obiekt:
 
 Pola `id`, `amount`, `section`, `rack`, `shelf` i `placement` są liczbami całkowitymi. `id` jest nadawane przez bazę. Ilość i wartości lokalizacji muszą być nieujemne. `name` i `category` są niepustymi tekstami.
 
+Pobranie ze stanu (ruch magazynowy) jest reprezentowane przez obiekt:
+
+```json
+{
+  "id": 5,
+  "amount": 4,
+  "created_at": "2026-11-10T11:45:12.456Z"
+}
+```
+
+`id` i `created_at` nadaje baza. `amount` to liczba pobranych sztuk (dodatnia liczba całkowita). `created_at` to data i godzina.
+
 ## Endpointy API
 
 | Metoda i ścieżka | Dane wejściowe | Odpowiedź |
 |---|---|---|
-| `GET /health` | Brak | `200` — `{ "status": "ok" }` |
+| `GET /health` | Brak | `200` — `{ "status": "ok" }`; `503` — brak połączenia z bazą |
 | `GET /api/products` | Brak | `200` — lista produktów posortowana według ID |
 | `GET /api/products/:id` | ID w ścieżce URL | `200` — produkt; `400` — nieprawidłowe ID; `404` — brak produktu |
 | `POST /api/products` | Obiekt nowego produktu bez `id` | `201` — dodany produkt; `400` — nieprawidłowe dane |
-| `PATCH /api/products/:id/stock` | `{ "amount": 2 }` — liczba sztuk do pobrania | `200` — produkt ze zmienionym stanem; `400` — nieprawidłowe ID lub ilość; `409` — brak produktu albo za mały stan |
+| `PATCH /api/products/:id/stock` | `{ "amount": 2 }` — liczba sztuk do pobrania | `200` — produkt ze zmienionym stanem; `400` — nieprawidłowe ID lub ilość; `404` — brak produktu; `409` — za mały stan |
+| `GET /api/products/:id/movements` | ID w ścieżce URL | `200` — historia pobrań produktu (najnowsze pierwsze), `[]` gdy brak; `400` — nieprawidłowe ID; `404` — brak produktu |
 | `DELETE /api/products/:id` | ID w ścieżce URL | `204` — produkt usunięty; `400` — nieprawidłowe ID; `404` — brak produktu |
+
 
 Błędy API zwracające treść mają format JSON:
 
@@ -75,7 +89,20 @@ Content-Type: application/json
 }
 ```
 
-Ilość musi być dodatnią liczbą całkowitą, a stan magazynowy musi wystarczać na pobranie.
+Ilość musi być dodatnią liczbą całkowitą, a stan magazynowy musi wystarczać na pobranie. Każde udane pobranie jest zapisywane w historii (tabela `stock_movements`). Nieudane pobrania (`404`, `409`) nie są zapisywane.
+
+### Historia pobrań
+
+`GET /api/products/:id/movements` zwraca listę pobrań danego produktu, od najnowszego. Przykład dla produktu o ID `1`:
+
+```json
+[
+  { "id": 5, "amount": 4, "created_at": "2026-11-10T11:45:12.456Z" },
+  { "id": 2, "amount": 2, "created_at": "2026-11-10T11:30:00.123Z" }
+]
+```
+
+Produkt bez historii zwraca pustą listę `[]`, a nieistniejący produkt kod `404`.
 
 ### Usuwanie produktu
 

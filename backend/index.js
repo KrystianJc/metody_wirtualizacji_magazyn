@@ -112,6 +112,11 @@ app.patch('/api/products/:id/stock', async (req, res) => {
 		return res.status(409).json({ error: 'Insufficient stock' });
 	}
 
+	await pool.query(
+		'INSERT INTO stock_movements (product_id, amount) VALUES ($1, $2)',
+		[id, amount],
+	);
+
 	res.json(result.rows[0]);
 });
 
@@ -129,6 +134,32 @@ app.delete('/api/products/:id', async (req, res) => {
 	}
 
 	res.status(204).send();
+});
+
+app.get('/api/products/:id/movements', async (req, res) => {
+	const id = Number(req.params.id);
+
+	if (!Number.isInteger(id) || id < 1) {
+		return res.status(400).json({ error: 'Invalid product id' });
+	}
+
+	const product = await pool.query('SELECT 1 FROM products WHERE id = $1', [
+		id,
+	]);
+
+	if (product.rowCount === 0) {
+		return res.status(404).json({ error: 'Product not found' });
+	}
+
+	const result = await pool.query(
+		`SELECT id, amount, created_at
+		 FROM stock_movements
+		 WHERE product_id = $1
+		 ORDER BY created_at DESC, id DESC`,
+		[id],
+	);
+
+	res.json(result.rows);
 });
 
 app.listen(PORT, () => {
