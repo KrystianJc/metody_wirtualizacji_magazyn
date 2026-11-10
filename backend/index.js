@@ -9,13 +9,24 @@ const pool = new pg.Pool({
 	database: process.env.DB_NAME,
 });
 
+// obłsuga błędu puli gdy zgłosi błąd, aby Node nie kończył procesu
+pool.on('error', (err) => {
+	console.error('Unexpected database error:', err.message);
+});
+
 const app = express();
 app.use(express.json());
 const PORT = process.env.PORT || 3000;
 
 // endpoint testowy
-app.get('/health', (req, res) => {
-	res.json({ status: 'ok' });
+app.get('/health', async (req, res) => {
+	try {
+		await pool.query('SELECT 1');
+		res.json({ status: 'ok' });
+	} catch (err) {
+		console.error('Health check failed:', err.message);
+		res.status(503).json({ error: 'Database unreachable' });
+	}
 });
 
 app.get('/api/products', async (req, res) => {
