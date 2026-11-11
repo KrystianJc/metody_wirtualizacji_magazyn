@@ -23,17 +23,20 @@ Produkt jest reprezentowany przez obiekt:
 
 Pola `id`, `amount`, `section`, `rack`, `shelf` i `placement` są liczbami całkowitymi. `id` jest nadawane przez bazę. Ilość i wartości lokalizacji muszą być nieujemne. `name` i `category` są niepustymi tekstami.
 
-Pobranie ze stanu (ruch magazynowy) jest reprezentowane przez obiekt:
+Zdarzenie magazynowe jest reprezentowane przez obiekt:
 
 ```json
 {
   "id": 5,
+  "product_id": 1,
+  "product_name": "Wiertarka Bosch",
+  "event_type": "stock_withdrawn",
   "amount": 4,
   "created_at": "2026-11-10T11:45:12.456Z"
 }
 ```
 
-`id` i `created_at` nadaje baza. `amount` to liczba pobranych sztuk (dodatnia liczba całkowita). `created_at` to data i godzina.
+`id` i `created_at` nadaje baza. `event_type` może mieć wartość `product_added`, `stock_withdrawn` lub `product_deleted`. `amount` oznacza początkowy stan przy dodaniu, pobraną ilość przy pobraniu albo stan pozostały przy usunięciu.
 
 ## Endpointy API
 
@@ -44,9 +47,9 @@ Pobranie ze stanu (ruch magazynowy) jest reprezentowane przez obiekt:
 | `GET /api/products/:id` | ID w ścieżce URL | `200` — produkt; `400` — nieprawidłowe ID; `404` — brak produktu |
 | `POST /api/products` | Obiekt nowego produktu bez `id` | `201` — dodany produkt; `400` — nieprawidłowe dane |
 | `PATCH /api/products/:id/stock` | `{ "amount": 2 }` — liczba sztuk do pobrania | `200` — produkt ze zmienionym stanem; `400` — nieprawidłowe ID lub ilość; `404` — brak produktu; `409` — za mały stan |
-| `GET /api/products/:id/movements` | ID w ścieżce URL | `200` — historia pobrań produktu (najnowsze pierwsze), `[]` gdy brak; `400` — nieprawidłowe ID; `404` — brak produktu |
+| `GET /api/products/:id/movements` | ID w ścieżce URL | `200` — historia zdarzeń produktu (najnowsze pierwsze), `[]` gdy brak; `400` — nieprawidłowe ID |
+| `GET /api/stock-movements` | Brak | `200` — historia wszystkich zdarzeń (najnowsze pierwsze), również usuniętych produktów |
 | `DELETE /api/products/:id` | ID w ścieżce URL | `204` — produkt usunięty; `400` — nieprawidłowe ID; `404` — brak produktu |
-
 
 Błędy API zwracające treść mają format JSON:
 
@@ -72,7 +75,7 @@ Błędy API zwracające treść mają format JSON:
 }
 ```
 
-Po poprawnym dodaniu zwraca kod `201` i kompletny obiekt produktu, razem z nadanym `id`.
+Po poprawnym dodaniu zwraca kod `201` i kompletny obiekt produktu, razem z nadanym `id`. Dodanie jest rejestrowane w `stock_movements` jako `product_added`.
 
 ### Pobieranie części zapasu
 
@@ -89,24 +92,17 @@ Content-Type: application/json
 }
 ```
 
-Ilość musi być dodatnią liczbą całkowitą, a stan magazynowy musi wystarczać na pobranie. Każde udane pobranie jest zapisywane w historii (tabela `stock_movements`). Nieudane pobrania (`404`, `409`) nie są zapisywane.
+Ilość musi być dodatnią liczbą całkowitą, a stan magazynowy musi wystarczać na pobranie. Każde udane pobranie jest zapisywane jako osobny wpis `stock_withdrawn`. Nieudane pobrania (`404`, `409`) nie są zapisywane. Zmiana stanu i wpis historii są wykonywane w jednej transakcji.
 
-### Historia pobrań
+### Historia magazynu
 
-`GET /api/products/:id/movements` zwraca listę pobrań danego produktu, od najnowszego. Przykład dla produktu o ID `1`:
+`GET /api/products/:id/movements` zwraca zdarzenia produktu, od najnowszego. `GET /api/stock-movements` zwraca wszystkie zdarzenia, które wyświetla podstrona historii.
 
-```json
-[
-  { "id": 5, "amount": 4, "created_at": "2026-11-10T11:45:12.456Z" },
-  { "id": 2, "amount": 2, "created_at": "2026-11-10T11:30:00.123Z" }
-]
-```
-
-Produkt bez historii zwraca pustą listę `[]`, a nieistniejący produkt kod `404`.
+Dodanie produktu, każde udane pobranie i usunięcie produktu tworzą osobny wpis. Przy usunięciu zapisywana jest ilość pozostała w magazynie. Wpisy pozostają po usunięciu produktu: `product_id` jest ustawiane na `null`, a zapisana nazwa produktu pozostaje w historii.
 
 ### Usuwanie produktu
 
-`DELETE /api/products/:id` usuwa cały produkt. Przy sukcesie zwraca `204 No Content`, czyli odpowiedź bez treści.
+`DELETE /api/products/:id` usuwa cały produkt i zapisuje zdarzenie `product_deleted`. Przy sukcesie zwraca `204 No Content`, czyli odpowiedź bez treści.
 
 ## Walidacja lokalizacji
 
