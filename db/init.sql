@@ -23,13 +23,15 @@ INSERT INTO products (name, category, amount, section, rack, shelf, placement) V
 
 CREATE TABLE stock_movements (
   id SERIAL PRIMARY KEY,
-  product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-  amount INTEGER NOT NULL CHECK (amount > 0),
+  product_id INTEGER REFERENCES products(id) ON DELETE SET NULL,
+  product_name TEXT NOT NULL,
+  event_type TEXT NOT NULL DEFAULT 'stock_withdrawn' CHECK (event_type IN ('product_added', 'stock_withdrawn', 'product_deleted')),
+  amount INTEGER NOT NULL CHECK (amount >= 0),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-INSERT INTO stock_movements (product_id, amount) VALUES
-  (1, 3),
-  (1, 2),
-  (3, 50),
-  (8, 5);
+INSERT INTO stock_movements (product_id, product_name, amount) VALUES
+  (1, 'Wiertarka Bosch', 3),
+  (1, 'Wiertarka Bosch', 2),
+  (3, 'Zestaw śrub M8', 50),
+  (8, 'Rękawice robocze', 5);
