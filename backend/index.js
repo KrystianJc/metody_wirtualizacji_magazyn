@@ -30,7 +30,7 @@ const httpRequests = new promClient.Counter({
 app.use((req, res, next) => {
 	res.on('finish', () => {
 		httpRequests // kolejnosc lables musi sie zgadzac z const httpRequests
-			.labels(req.method, req.route?.path ?? 'unknown', res.statusCode) //req.route?.path
+			.labels(req.method, req.route?.path ?? 'unknown', res.statusCode) //req.route?.path bierze bezwględna ściężkę jeśli istnieje, w przeciwnym razie undefined
 			.inc();
 	});
 	next();
