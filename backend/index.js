@@ -26,6 +26,11 @@ const httpRequests = new promClient.Counter({
 	help: 'Liczba żądań HTTP',
 	labelNames: ['method', 'route', 'status'],
 });
+const stockWithdrawn = new promClient.Counter({
+	name: 'stock_withdrawn_items_total',
+	help: 'Liczba pobranych sztuk wg produktu',
+	labelNames: ['product'],
+});
 
 app.use((req, res, next) => {
 	res.on('finish', () => {
@@ -167,6 +172,7 @@ app.patch('/api/products/:id/stock', async (req, res) => {
 			[id, product.name, amount],
 		);
 		await client.query('COMMIT');
+		stockWithdrawn.labels(product.name).inc(amount);
 
 		res.json(product);
 	} catch (err) {
