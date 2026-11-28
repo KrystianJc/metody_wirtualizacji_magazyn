@@ -10,6 +10,7 @@ interface StockMovement {
   created_at: string;
   product_id: number | null;
   product_name: string;
+  changed_by: string;
   event_type: 'product_added' | 'stock_withdrawn' | 'product_deleted';
 }
 

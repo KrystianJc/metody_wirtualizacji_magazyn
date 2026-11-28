@@ -30,6 +30,7 @@ export class AddPage {
     const values = new FormData(form);
     const name = String(values.get('name') ?? '').trim();
     const category = String(values.get('category') ?? '').trim();
+    const actor = String(values.get('actor') ?? '').trim();
     const readInteger = (field: string) => {
       const value = String(values.get(field) ?? '').trim();
       return /^\d+$/.test(value) ? Number(value) : null;
@@ -44,6 +45,7 @@ export class AddPage {
     if (
       !name ||
       !category ||
+      !actor ||
       amount === null ||
       section === null ||
       rack === null ||
@@ -75,6 +77,7 @@ export class AddPage {
     this.productService.createProduct({
       name,
       category,
+      actor,
       amount,
       section,
       rack,

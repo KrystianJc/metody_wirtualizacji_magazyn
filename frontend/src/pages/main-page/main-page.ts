@@ -1,10 +1,11 @@
+import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { ProductService } from '../../services/product.service';
-import { Product } from '../../interfaces/product';
+import { Product, ProductHistoryEntry } from '../../interfaces/product';
 import { LoadingPage } from '../loading-page/loading-page';
 
 @Component({
-  imports: [LoadingPage],
+  imports: [LoadingPage, DatePipe],
   selector: 'app-main-page',
   styleUrl: './main-page.css',
   templateUrl: './main-page.html',
@@ -17,6 +18,10 @@ export class MainPage {
   selectedCategoryMain = signal('');
   searchedProduct = signal<Product | null>(null);
   searchError = signal('');
+  historyProduct = signal<Product | null>(null);
+  productHistory = signal<ProductHistoryEntry[]>([]);
+  historyLoading = signal(false);
+  historyError = signal(false);
 
   categories = computed(() => [
     ...new Set((this.backendData() ?? []).map((item) => item.category)),
@@ -66,14 +71,53 @@ export class MainPage {
       return;
     }
 
+    const actor = window.prompt('Kto wykonuje tę zmianę?');
+    if (!actor?.trim()) return;
+
     const request = amount === available
-      ? this.productService.deleteProduct(id)
-      : this.productService.pickup(id, amount);
+      ? this.productService.deleteProduct(id, actor.trim())
+      : this.productService.pickup(id, amount, actor.trim());
 
     request.subscribe({
       next: () => this.productService.loadProducts(),
       error: (error) => console.error('Nie udało się usunąć produktu:', error),
     });
+  }
+
+  showHistory(product: Product) {
+    this.historyProduct.set(product);
+    this.productHistory.set([]);
+    this.historyLoading.set(true);
+    this.historyError.set(false);
+    this.productService.getProductHistory(product.id).subscribe({
+      next: (entries) => {
+        this.productHistory.set(entries);
+        this.historyLoading.set(false);
+      },
+      error: (error) => {
+        console.error('Nie udało się pobrać historii produktu:', error);
+        this.historyError.set(true);
+        this.historyLoading.set(false);
+      },
+    });
+  }
+
+  closeHistory() {
+    this.historyProduct.set(null);
+  }
+
+  historyChanges(entry: ProductHistoryEntry): string[] {
+    if (!entry.before_data) {
+      return [`Dodano ${entry.after_data?.amount ?? 0} szt. produktu.`];
+    }
+    if (!entry.after_data) return ['Usunięto rekord produktu.'];
+    const labels: Record<string, string> = {
+      name: 'Nazwa', category: 'Kategoria', amount: 'Ilość',
+      section: 'Sekcja', rack: 'Regał', shelf: 'Półka', placement: 'Miejsce',
+    };
+    return Object.keys(labels)
+      .filter((key) => entry.before_data?.[key as keyof Product] !== entry.after_data?.[key as keyof Product])
+      .map((key) => `${labels[key]}: ${entry.before_data?.[key as keyof Product]} → ${entry.after_data?.[key as keyof Product]}`);
   }
 
   ngOnInit() {
