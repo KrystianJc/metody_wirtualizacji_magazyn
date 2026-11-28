@@ -43,6 +43,31 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
+const productHistoryTable = `
+	CREATE TABLE IF NOT EXISTS product_history (
+		id SERIAL PRIMARY KEY,
+		product_id INTEGER NOT NULL,
+		product_name TEXT NOT NULL,
+		event_type TEXT NOT NULL CHECK (event_type IN ('product_added', 'product_updated', 'stock_withdrawn', 'product_deleted')),
+		actor TEXT NOT NULL,
+		before_data JSONB,
+		after_data JSONB,
+		created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+	)`;
+
+async function recordProductHistory(client, { product, eventType, actor, before, after }) {
+	await client.query(
+		`INSERT INTO product_history (product_id, product_name, event_type, actor, before_data, after_data)
+		 VALUES ($1, $2, $3, $4, $5, $6)`,
+		[product.id, product.name, eventType, actor, before, after],
+	);
+}
+
+function changedBy(req) {
+	const user = req.get('X-User')?.trim();
+	return user ? user.slice(0, 100) : 'unknown';
+}
+
 // endpoint testowy
 app.get('/health', async (req, res) => {
 	try {
@@ -83,6 +108,7 @@ app.get('/api/products/:id', async (req, res) => {
 app.post('/api/products', async (req, res) => {
 	const { name, category, amount, section, rack, shelf, placement } =
 		req.body ?? {};
+	const user = changedBy(req);
 
 	if (typeof name !== 'string' || name.trim() === '') {
 		return res.status(400).json({ error: "Field 'name' is required" });
@@ -110,10 +136,11 @@ app.post('/api/products', async (req, res) => {
 			[name.trim(), category.trim(), amount, section, rack, shelf, placement],
 		);
 		const product = result.rows[0];
+		await recordProductHistory(client, { product, eventType: 'product_added', actor: user, before: null, after: product });
 		await client.query(
-			`INSERT INTO stock_movements (product_id, product_name, event_type, amount)
-			 VALUES ($1, $2, 'product_added', $3)`,
-			[product.id, product.name, product.amount],
+			`INSERT INTO stock_movements (product_id, product_name, event_type, amount, changed_by)
+			 VALUES ($1, $2, 'product_added', $3, $4)`,
+			[product.id, product.name, product.amount, user],
 		);
 		await client.query('COMMIT');
 
@@ -130,6 +157,7 @@ app.post('/api/products', async (req, res) => {
 app.patch('/api/products/:id/stock', async (req, res) => {
 	const id = Number(req.params.id);
 	const { amount } = req.body ?? {};
+	const user = changedBy(req);
 
 	if (!Number.isInteger(id) || id < 1) {
 		return res.status(400).json({ error: 'Invalid product id' });
@@ -143,6 +171,16 @@ app.patch('/api/products/:id/stock', async (req, res) => {
 
 	try {
 		await client.query('BEGIN');
+		const previousResult = await client.query('SELECT * FROM products WHERE id = $1 FOR UPDATE', [id]);
+		if (previousResult.rowCount === 0) {
+			await client.query('ROLLBACK');
+			return res.status(404).json({ error: 'Product not found' });
+		}
+		const previous = previousResult.rows[0];
+		if (previous.amount < amount) {
+			await client.query('ROLLBACK');
+			return res.status(409).json({ error: 'Insufficient stock' });
+		}
 		const result = await client.query(
 			`UPDATE products
 			 SET amount = amount - $1
@@ -166,10 +204,11 @@ app.patch('/api/products/:id/stock', async (req, res) => {
 		}
 
 		const product = result.rows[0];
+		await recordProductHistory(client, { product, eventType: 'stock_withdrawn', actor: user, before: previous, after: product });
 		await client.query(
-			`INSERT INTO stock_movements (product_id, product_name, event_type, amount)
-			 VALUES ($1, $2, 'stock_withdrawn', $3)`,
-			[id, product.name, amount],
+			`INSERT INTO stock_movements (product_id, product_name, event_type, amount, changed_by)
+			 VALUES ($1, $2, 'stock_withdrawn', $3, $4)`,
+			[id, product.name, amount, user],
 		);
 		await client.query('COMMIT');
 		stockWithdrawn.labels(product.name).inc(amount);
@@ -186,6 +225,7 @@ app.patch('/api/products/:id/stock', async (req, res) => {
 
 app.delete('/api/products/:id', async (req, res) => {
 	const id = Number(req.params.id);
+	const user = changedBy(req);
 
 	if (!Number.isInteger(id) || id < 1) {
 		return res.status(400).json({ error: 'Invalid product id' });
@@ -197,7 +237,7 @@ app.delete('/api/products/:id', async (req, res) => {
 		const deleted = await client.query(
 			`DELETE FROM products
 			 WHERE id = $1
-			 RETURNING id, name, amount`,
+			 RETURNING *`,
 			[id],
 		);
 
@@ -207,10 +247,11 @@ app.delete('/api/products/:id', async (req, res) => {
 		}
 
 		const product = deleted.rows[0];
+		await recordProductHistory(client, { product, eventType: 'product_deleted', actor: user, before: product, after: null });
 		await client.query(
-			`INSERT INTO stock_movements (product_id, product_name, event_type, amount)
-			 VALUES (NULL, $1, 'product_deleted', $2)`,
-			[product.name, product.amount],
+			`INSERT INTO stock_movements (product_id, product_name, event_type, amount, changed_by)
+			 VALUES (NULL, $1, 'product_deleted', $2, $3)`,
+			[product.name, product.amount, user],
 		);
 		await client.query('COMMIT');
 		res.status(204).send();
@@ -231,7 +272,7 @@ app.get('/api/products/:id/movements', async (req, res) => {
 	}
 
 	const result = await pool.query(
-		`SELECT id, product_id, product_name, event_type, amount, created_at
+		`SELECT id, product_id, product_name, event_type, amount, changed_by, created_at
 		 FROM stock_movements
 		 WHERE product_id = $1
 		 ORDER BY created_at DESC, id DESC`,
@@ -241,10 +282,28 @@ app.get('/api/products/:id/movements', async (req, res) => {
 	res.json(result.rows);
 });
 
+app.get('/api/products/:id/history', async (req, res) => {
+	const id = Number(req.params.id);
+	if (!Number.isInteger(id) || id < 1) {
+		return res.status(400).json({ error: 'Invalid product id' });
+	}
+	try {
+		const result = await pool.query(
+			`SELECT id, product_id, product_name, event_type, actor AS changed_by, before_data, after_data, created_at
+			 FROM product_history WHERE product_id = $1 ORDER BY created_at DESC, id DESC`,
+			[id],
+		);
+		res.json(result.rows);
+	} catch (err) {
+		console.error('Failed to fetch product history:', err.message);
+		res.status(500).json({ error: 'Failed to fetch product history' });
+	}
+});
+
 app.get('/api/stock-movements', async (req, res) => {
 	try {
 		const result = await pool.query(
-			`SELECT id, product_id, product_name, event_type, amount, created_at
+			`SELECT id, product_id, product_name, event_type, amount, changed_by, created_at
 			 FROM stock_movements
 			 ORDER BY created_at DESC, id DESC`,
 		);
@@ -255,6 +314,9 @@ app.get('/api/stock-movements', async (req, res) => {
 	}
 });
 
-app.listen(PORT, () => {
-	console.log(`Server running on port ${PORT}`);
-});
+pool.query(productHistoryTable)
+	.then(() => app.listen(PORT, () => console.log(`Server running on port ${PORT}`)))
+	.catch((err) => {
+		console.error('Failed to initialize product history:', err.message);
+		process.exit(1);
+	});

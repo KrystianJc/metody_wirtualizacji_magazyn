@@ -45,11 +45,14 @@ Zdarzenie magazynowe jest reprezentowane przez obiekt:
 | `GET /health` | Brak | `200` — `{ "status": "ok" }`; `503` — brak połączenia z bazą |
 | `GET /api/products` | Brak | `200` — lista produktów posortowana według ID |
 | `GET /api/products/:id` | ID w ścieżce URL | `200` — produkt; `400` — nieprawidłowe ID; `404` — brak produktu |
-| `POST /api/products` | Obiekt nowego produktu bez `id` | `201` — dodany produkt; `400` — nieprawidłowe dane |
-| `PATCH /api/products/:id/stock` | `{ "amount": 2 }` — liczba sztuk do pobrania | `200` — produkt ze zmienionym stanem; `400` — nieprawidłowe ID lub ilość; `404` — brak produktu; `409` — za mały stan |
+| `POST /api/products` | Obiekt nowego produktu bez `id`; opcjonalny nagłówek `X-User` | `201` — dodany produkt; `400` — nieprawidłowe dane |
+| `PATCH /api/products/:id/stock` | `{ "amount": 2 }` — liczba sztuk do pobrania; opcjonalny nagłówek `X-User` | `200` — produkt ze zmienionym stanem; `400` — nieprawidłowe ID lub ilość; `404` — brak produktu; `409` — za mały stan |
 | `GET /api/products/:id/movements` | ID w ścieżce URL | `200` — historia zdarzeń produktu (najnowsze pierwsze), `[]` gdy brak; `400` — nieprawidłowe ID |
+| `GET /api/products/:id/history` | ID w ścieżce URL | `200` — historia zmian produktu z osobą i stanem przed/po |
 | `GET /api/stock-movements` | Brak | `200` — historia wszystkich zdarzeń (najnowsze pierwsze), również usuniętych produktów |
-| `DELETE /api/products/:id` | ID w ścieżce URL | `204` — produkt usunięty; `400` — nieprawidłowe ID; `404` — brak produktu |
+| `DELETE /api/products/:id` | Opcjonalny nagłówek `X-User` | `204` — produkt usunięty; `400` — nieprawidłowe ID; `404` — brak produktu |
+
+Nagłówek `X-User` jest opcjonalną etykietą autora. Gdy go brakuje lub zawiera wyłącznie białe znaki, API zapisuje `changed_by: "unknown"`. Wartość nagłówka nie potwierdza tożsamości użytkownika.
 
 Błędy API zwracające treść mają format JSON:
 
@@ -61,7 +64,7 @@ Błędy API zwracające treść mają format JSON:
 
 ### Dodawanie produktu
 
-`POST /api/products` przyjmuje obiekt bez pola `id`:
+`POST /api/products` przyjmuje obiekt bez pola `id`. Autora można przekazać w nagłówku `X-User`:
 
 ```json
 {
@@ -96,13 +99,13 @@ Ilość musi być dodatnią liczbą całkowitą, a stan magazynowy musi wystarcz
 
 ### Historia magazynu
 
-`GET /api/products/:id/movements` zwraca zdarzenia produktu, od najnowszego. `GET /api/stock-movements` zwraca wszystkie zdarzenia, które wyświetla podstrona historii.
+`GET /api/products/:id/movements` zwraca zdarzenia produktu, od najnowszego. Każdy wpis zawiera `changed_by`. `GET /api/products/:id/history` udostępnia szczegółową historię zmian produktu z autorem oraz stanem przed i po zmianie. `GET /api/stock-movements` zwraca wszystkie zdarzenia, które wyświetla podstrona historii, również z polem `changed_by`.
 
 Dodanie produktu, każde udane pobranie i usunięcie produktu tworzą osobny wpis. Przy usunięciu zapisywana jest ilość pozostała w magazynie. Wpisy pozostają po usunięciu produktu: `product_id` jest ustawiane na `null`, a zapisana nazwa produktu pozostaje w historii.
 
 ### Usuwanie produktu
 
-`DELETE /api/products/:id` usuwa cały produkt i zapisuje zdarzenie `product_deleted`. Przy sukcesie zwraca `204 No Content`, czyli odpowiedź bez treści.
+`DELETE /api/products/:id` usuwa cały produkt i zapisuje zdarzenie `product_deleted`. Przy sukcesie zwraca `204 No Content`, czyli odpowiedź bez treści. Usunięcie jest twarde: `GET /api/products/:id` zwraca potem `404`, a wpisy historii pozostają dostępne przez `GET /api/stock-movements`.
 
 ## Walidacja lokalizacji
 

@@ -27,6 +27,18 @@ CREATE TABLE stock_movements (
   product_name TEXT NOT NULL,
   event_type TEXT NOT NULL DEFAULT 'stock_withdrawn' CHECK (event_type IN ('product_added', 'stock_withdrawn', 'product_deleted')),
   amount INTEGER NOT NULL CHECK (amount >= 0),
+  changed_by TEXT NOT NULL DEFAULT 'unknown',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE product_history (
+  id SERIAL PRIMARY KEY,
+  product_id INTEGER NOT NULL,
+  product_name TEXT NOT NULL,
+  event_type TEXT NOT NULL CHECK (event_type IN ('product_added', 'product_updated', 'stock_withdrawn', 'product_deleted')),
+  actor TEXT NOT NULL,
+  before_data JSONB,
+  after_data JSONB,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
